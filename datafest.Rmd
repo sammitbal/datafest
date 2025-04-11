@@ -36,3 +36,18 @@ colnames(lease)
 # esquisser(unem)
 ```
 
+## Consolidate Industry
+
+```{r}
+
+sum_industry <- lease %>%
+  filter(market == c("Manhattan", "Los Angeles", "Houston") & is.na(internal_industry) == 0) %>%
+  group_by(market, internal_industry) %>%
+  summarize(count = n()) %>%
+  mutate(prp = count/(sum(count))) %>%
+  ungroup()
+
+
+```
+
+
