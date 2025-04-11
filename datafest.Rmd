@@ -32,7 +32,8 @@ Leases <- read.csv("./Leases.csv")
 
 ```{r}
 
-esquisser(Unemployment)
+esquisser(data = Unemployment, viewer = "browser")
+
 
 
 ```
