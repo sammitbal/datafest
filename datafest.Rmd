@@ -51,5 +51,16 @@ sum_industry <- lease %>%
 ```
 
 
+Make Rent, Occupancy, and Availability  graphs for Manhattan, LA, Houston
+
+
+
+```{r}
+lease %>%
+group_by(market) %>%
+summarise(nmarket = n()) %>%
+arrange(desc(nmarket))
+
+```
 
 
