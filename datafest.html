@@ -371,12 +371,51 @@ library(tidyverse)</code></pre>
 ## ✖ dplyr::filter() masks stats::filter()
 ## ✖ dplyr::lag()    masks stats::lag()
 ## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
-<pre class="r"><code>MajorMarketOccupancy &lt;- read.csv(&quot;./Major Market Occupancy Data-revised.csv&quot;)
-PriceandAvailability &lt;- read.csv(&quot;./Price and Availability Data.csv&quot;)
-Unemployment &lt;- read.csv(&quot;./Unemployment.csv&quot;)</code></pre>
+<pre class="r"><code>maj_market_occu &lt;- read.csv(&quot;./Major Market Occupancy Data-revised.csv&quot;)
+price_avail &lt;- read.csv(&quot;./Price and Availability Data.csv&quot;)
+unem &lt;- read.csv(&quot;./Unemployment.csv&quot;)
+lease &lt;- read.csv(&quot;./Leases.csv&quot;)</code></pre>
 </div>
 <div id="understanding-the-data" class="section level2">
 <h2>Understanding the Data</h2>
+<pre class="r"><code>colnames(maj_market_occu)</code></pre>
+<pre><code>## [1] &quot;year&quot;                          &quot;quarter&quot;                      
+## [3] &quot;market&quot;                        &quot;ending_occupancy_proportion&quot;  
+## [5] &quot;starting_occupancy_proportion&quot; &quot;avg_occupancy_proportion&quot;</code></pre>
+<pre class="r"><code>colnames(price_avail)</code></pre>
+<pre><code>##  [1] &quot;year&quot;                           &quot;quarter&quot;                       
+##  [3] &quot;market&quot;                         &quot;internal_class&quot;                
+##  [5] &quot;RBA&quot;                            &quot;available_space&quot;               
+##  [7] &quot;availability_proportion&quot;        &quot;internal_class_rent&quot;           
+##  [9] &quot;overall_rent&quot;                   &quot;direct_available_space&quot;        
+## [11] &quot;direct_availability_proportion&quot; &quot;direct_internal_class_rent&quot;    
+## [13] &quot;direct_overall_rent&quot;            &quot;sublet_available_space&quot;        
+## [15] &quot;sublet_availability_proportion&quot; &quot;sublet_internal_class_rent&quot;    
+## [17] &quot;sublet_overall_rent&quot;            &quot;leasing&quot;</code></pre>
+<pre class="r"><code>colnames(unem)</code></pre>
+<pre><code>## [1] &quot;year&quot;              &quot;quarter&quot;           &quot;month&quot;            
+## [4] &quot;state&quot;             &quot;unemployment_rate&quot;</code></pre>
+<pre class="r"><code>colnames(lease)</code></pre>
+<pre><code>##  [1] &quot;year&quot;                           &quot;quarter&quot;                       
+##  [3] &quot;monthsigned&quot;                    &quot;market&quot;                        
+##  [5] &quot;building_name&quot;                  &quot;building_id&quot;                   
+##  [7] &quot;address&quot;                        &quot;region&quot;                        
+##  [9] &quot;city&quot;                           &quot;state&quot;                         
+## [11] &quot;zip&quot;                            &quot;internal_submarket&quot;            
+## [13] &quot;internal_class&quot;                 &quot;leasedSF&quot;                      
+## [15] &quot;company_name&quot;                   &quot;internal_industry&quot;             
+## [17] &quot;transaction_type&quot;               &quot;internal_market_cluster&quot;       
+## [19] &quot;costarID&quot;                       &quot;space_type&quot;                    
+## [21] &quot;CBD_suburban&quot;                   &quot;RBA&quot;                           
+## [23] &quot;available_space&quot;                &quot;availability_proportion&quot;       
+## [25] &quot;internal_class_rent&quot;            &quot;overall_rent&quot;                  
+## [27] &quot;direct_available_space&quot;         &quot;direct_availability_proportion&quot;
+## [29] &quot;direct_internal_class_rent&quot;     &quot;direct_overall_rent&quot;           
+## [31] &quot;sublet_available_space&quot;         &quot;sublet_availability_proportion&quot;
+## [33] &quot;sublet_internal_class_rent&quot;     &quot;sublet_overall_rent&quot;           
+## [35] &quot;leasing&quot;</code></pre>
+<pre class="r"><code># esquisser(data = unem, viewer = &quot;browser&quot;)
+# esquisser(unem)</code></pre>
 </div>
 
 

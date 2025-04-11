@@ -32,14 +32,7 @@ colnames(lease)
 ```
 
 ```{r}
-<<<<<<< Updated upstream
-
-esquisser(data = Unemployment, viewer = "browser")
-
-
-
-=======
-esquisser(unem)
->>>>>>> Stashed changes
+# esquisser(data = unem, viewer = "browser")
+# esquisser(unem)
 ```
 
