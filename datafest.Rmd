@@ -17,14 +17,17 @@ library(esquisse)
 library(tidyverse)
 
 MajorMarketOccupancy <- read.csv("./Major Market Occupancy Data-revised.csv")
-
 PriceandAvailability <- read.csv("./Price and Availability Data.csv")
-
 Unemployment <- read.csv("./Unemployment.csv")
 
 
+```
 
+## Understanding the Data
+
+```{r}
 
 ```
+
 
 
