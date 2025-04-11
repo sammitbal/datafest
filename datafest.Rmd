@@ -16,28 +16,30 @@ knitr::opts_chunk$set(echo = TRUE)
 library(esquisse)
 library(tidyverse)
 
-MajorMarketOccupancy <- read.csv("./Major Market Occupancy Data-revised.csv")
-PriceandAvailability <- read.csv("./Price and Availability Data.csv")
-Unemployment <- read.csv("./Unemployment.csv")
-
-Leases <- read.csv("./Leases.csv")
-
+maj_market_occu <- read.csv("./Major Market Occupancy Data-revised.csv")
+price_avail <- read.csv("./Price and Availability Data.csv")
+unem <- read.csv("./Unemployment.csv")
+lease <- read.csv("./Leases.csv")
 ```
 
 ## Understanding the Data
 
 ```{r}
-
+colnames(maj_market_occu)
+colnames(price_avail)
+colnames(unem)
+colnames(lease)
 ```
 
-
-
-
 ```{r}
+<<<<<<< Updated upstream
 
 esquisser(data = Unemployment, viewer = "browser")
 
 
 
+=======
+esquisser(unem)
+>>>>>>> Stashed changes
 ```
 
