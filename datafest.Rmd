@@ -22,9 +22,18 @@ PriceandAvailability <- read.csv("./Price and Availability Data.csv")
 
 Unemployment <- read.csv("./Unemployment.csv")
 
+Leases <- read.csv("./Leases.csv")
 
 
 
 ```
 
+
+
+```{r}
+
+esquisser(Unemployment)
+
+
+```
 
