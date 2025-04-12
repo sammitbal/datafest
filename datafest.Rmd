@@ -154,6 +154,42 @@ print(combined_occupancy_plot)
 Histogram for each city for sublet available space.
 
 
+```{r}
+# ===================== Sublet Available Space =================================
+combined_sublet_data <- lease %>%
+  filter(market %in% c("Manhattan", "Los Angeles", "Houston")) %>%
+  mutate(time = paste(year, ".", quarter, sep = "")) %>%
+  group_by(market, time) %>%
+  summarize(sublet_space = sum(as.numeric(sublet_available_space), na.rm = TRUE)) %>%
+  arrange(market, time)
+
+# Convert time to ordered factor
+combined_sublet_data$time <- factor(combined_sublet_data$time, levels = unique(combined_sublet_data$time), ordered = TRUE)
+
+# Plot
+combined_sublet_plot <- ggplot(combined_sublet_data, aes(x = time, y = sublet_space, color = market, group = market)) +
+  geom_line(size = 1.2) +
+  geom_point() +
+  geom_vline(xintercept = which(levels(combined_sublet_data$time) == "2020.Q1"),
+             linetype = "dashed", color = "gray40", size = 1) +
+  annotate("text", x = which(levels(combined_sublet_data$time) == "2020.Q1"), y = Inf,
+           label = "COVID                               ", vjust = -0.5, angle = 90, size = 3, color = "gray40") +
+  labs(
+    title = "Sublet Available Space Trends (2018–2024)",
+    subtitle = "Total square footage across Manhattan, Los Angeles, and Houston",
+    x = "Quarter",
+    y = "Sublet Available Space (sq ft)",
+    color = "Market"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+print(combined_sublet_plot)
+
+ggsave("Plots/combined_sublet_plot.png", plot = combined_sublet_plot, width = 8, height = 5, dpi = 300)
+
+
+```
 
 
 
