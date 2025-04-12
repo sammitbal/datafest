@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from scipy.spatial.distance import pdist, squareform
 
+
 # === Step 1: Load and Clean Data ===
 leases = pd.read_csv(r"C:\Users\sammi\Downloads\OneDrive_2025-04-11\Dataset 2025\Leases.csv")
 
@@ -42,10 +43,11 @@ distance_matrix = pdist(scaled_df, metric='euclidean')
 distance_matrix_square = squareform(distance_matrix)
 
 # === Step 5: Heatmap ===
-plt.figure(figsize=(10, 8))
-sns.heatmap(distance_matrix_square, xticklabels=scaled_df.index, yticklabels=scaled_df.index, cmap='viridis')
+plt.figure(figsize=(10, 10))
+sns.heatmap(distance_matrix_square, xticklabels=scaled_df.index, yticklabels=scaled_df.index, cmap='plasma')
 plt.title("City-to-City Similarity Heatmap")
 plt.xticks(rotation=90)
 plt.tight_layout()
-plt.savefig("heatmap_similarity.png")  
+#plt.savefig("heatmap_similarity.png")  
 plt.show()
+
