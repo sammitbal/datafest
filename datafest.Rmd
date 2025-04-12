@@ -53,6 +53,9 @@ sum_industry <- lease %>%
 
 Make Rent, Occupancy, and Availability  graphs for Manhattan, LA, Houston
 
+Histogram for each city for sublet available space.
+
+
 
 
 ```{r}
