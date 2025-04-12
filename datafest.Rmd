@@ -191,7 +191,7 @@ ggsave("Plots/combined_sublet_plot.png", plot = combined_sublet_plot, width = 8,
 
 ```
 
-
+Number of lease entries for each city
 
 
 ```{r}
