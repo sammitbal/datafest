@@ -12,10 +12,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ## FrontMatter
 
 ```{r}
-library(esquisse)
-library(tidyverse)
 library(patchwork)
 library(ggrepel)
+library(plyr)
+library(esquisse)
+library(tidyverse)
 
 
 maj_market_occu <- read.csv("./Major Market Occupancy Data-revised.csv")
@@ -28,10 +29,17 @@ cpi <- read.csv("./US_inflation_rates.csv")
 ## Understanding the Data
 
 ```{r}
-colnames(maj_market_occu)
-colnames(price_avail)
-colnames(unem)
-colnames(lease)
+lease %>% 
+  select(company_name) %>%
+  unique()
+```
+
+
+```{r}
+# colnames(maj_market_occu)
+# colnames(price_avail)
+# colnames(unem)
+# colnames(lease)
 ```
 
 ```{r}
@@ -42,13 +50,15 @@ colnames(lease)
 ## Consolidate Industry
 
 ```{r}
-sum_industry <- lease %>%
-  filter(market == c("Manhattan", "Los Angeles", "Houston") & is.na(internal_industry) == 0) %>%
-  group_by(market, internal_industry) %>%
-  summarize(count = n()) %>%
-  mutate(prp = count/(sum(count))) %>%
-  ungroup()
+# sum_industry <- lease %>%
+#   filter(market == c("Manhattan", "Los Angeles", "Houston") & is.na(internal_industry) == 0) %>%
+#   group_by(market, internal_industry) %>%
+#   summarize(count = length(market)) %>%
+#   mutate(prp = count/(sum(count))) %>%
+#   ungroup()
 ```
+
+
 ```{r}
 # An index of CPI per quarter
 cpi_q <- cpi %>%
@@ -166,7 +176,8 @@ combined_rent_plot_adj <- ggplot(combined_rent_data_adj, aes(x = time,
     subtitle = "Comparison across Manhattan, Los Angeles, and Houston",
     x = "Quarter",
     y = "Average Rent Adjusted for Inflation\n(USD per sq ft/year)",
-    color = "Market"
+    color = "Market",
+    caption = "Note: All USD values are adjusted relative to 2018 Q1's Consumer Price Index"
   ) +
   scale_y_continuous(breaks = seq(20, 100, 10)) + 
   theme_minimal(base_size = 12) +
@@ -229,7 +240,7 @@ combined_occupancy_plot <- ggplot(combined_occupancy_data, aes(x = time, y = avg
   geom_line(size = 1.2) +
   geom_point() +
   labs(
-    title = "Occupancy Proportion Trends (2020.Q1–2024.Q3)",
+    title = "Occupancy Proportion Trends (2020–2024 Q3)",
     subtitle = "Comparison across Manhattan, Los Angeles, and Houston",
     x = "Quarter",
     y = "Occupancy (%)",
@@ -257,10 +268,7 @@ print(combined_occupancy_plot)
 #ggsave("Plots/combined_rent_trend.png", plot = combined_rent_plot, width = 8, height = 5, dpi = 300)
 #ggsave("Plots/combined_availability_trend.png", plot = combined_avail_plot, width = 8, height = 5, dpi = 300)
 #ggsave("Plots/combined_occupancy_trend.png", plot = combined_occupancy_plot, width = 8, height = 5, dpi = 300)
-
-
 ```
-
 
 
 Histogram for each city for sublet available space.
@@ -328,19 +336,29 @@ lease %>%
 ```
 
 
-```{r}
+```{r side-by-side-patchwork, message=FALSE, fig.width=20}
+# =========================== Leasing Trends =================================
 # Lease 3C = Leases across 3 cities
 three_mc <- c("Los Angeles", "Manhattan", "Houston")
 lease_3c <- lease %>% 
   filter(market == three_mc) %>%
   filter(!is.na(space_type)) %>%
   mutate(avail_space_mil = available_space / 1e6) %>%
-  mutate(RentSublet = ifelse(space_type == "New", "New", "Rental / Rental Sublet Space"))
+  mutate(RentSublet = ifelse(space_type == "New", "New", "Rental / Rental Sublet Space")) %>%
+  mutate(year_range = round(year / 2) * 2) %>%
+  mutate(year_range = factor(year_range, levels = c("2018", "2020", "2022", "2024"),
+                             labels = c("2018", "2019-2020", "2021-2022", "2023-2024")))
+
+lease_3c.cor <- ddply(.data=lease_3c, 
+                 .(RentSublet, year_range, market), 
+                 summarize, 
+                 n = ifelse(length(market) > 30, 
+                            "", paste("n = ", length(market))))
 
 quartiles <- lease_3c %>%
-  mutate(y_round = round(avail_space_mil, 1)) %>%
-  group_by(market, RentSublet) %>%
-  reframe(y = quantile(y_round, c(.25, .5, .75))) 
+  mutate(y_round = round(avail_space_mil, 0)) %>%
+  group_by(market, RentSublet, year_range) %>%
+  reframe(y = quantile(y_round, c(.5))) 
 
 ggplot(data = lease_3c,
        mapping = aes(
@@ -348,7 +366,7 @@ ggplot(data = lease_3c,
          y = avail_space_mil, 
          fill = market))  +
   geom_boxplot() + 
-  facet_grid(RentSublet ~ .) + 
+  facet_grid(RentSublet ~ year_range) + 
   geom_text_repel(
     data = quartiles,
     aes(x = market,
@@ -356,9 +374,25 @@ ggplot(data = lease_3c,
         label = y
     ),
     nudge_x = 0.4,
-    hjust = 0) + 
+    hjust = 0, 
+    size = 5) + 
+  geom_text(data=lease_3c.cor, aes(x=market, y=55, label=n), 
+                    colour="red", inherit.aes=FALSE, parse=FALSE, size = 5) + 
   labs(y = "Available Rental Space\n(millions of sq. ft.)",
-       x = "City") + 
-  theme(legend.position = "none")
+       x = "City", 
+       caption = "Note: Histograms without an `n` value are greater than size 30", 
+       title = "New vs Rental/Rental Sublet Space Availability (2018-2024)",
+       subtitle = "Comparison across Manhattan, Los Angeles, and Houston") + 
+  theme(legend.position = "none", 
+        plot.title = element_text(size = 25),
+        plot.subtitle = element_text(size = 20),
+        axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 10),
+        axis.title.x = element_text(size = 25),
+        axis.title.y = element_text(size = 15), 
+        plot.caption = element_text(size = 20, color = "darkred", face = "bold"),
+        strip.text.x = element_text(size = 15),
+        strip.text.y = element_text(size = 15)
+        )
 ```
 
