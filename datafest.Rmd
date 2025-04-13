@@ -14,16 +14,13 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(esquisse)
 library(tidyverse)
+library(patchwork)
 
 maj_market_occu <- read.csv("./Major Market Occupancy Data-revised.csv")
 price_avail <- read.csv("./Price and Availability Data.csv")
 unem <- read.csv("./Unemployment.csv")
 lease <- read.csv("./Leases.csv")
-
-three_mc <- c("Los Angeles", "Manhattan", "Houston")
-lease_3c <- lease %>% 
-  filter(market == three_mc) %>%
-  filter(!is.na(space_type))
+cpi <- read.csv("./US_inflation_rates.csv")
 ```
 
 ## Understanding the Data
@@ -43,22 +40,54 @@ colnames(lease)
 ## Consolidate Industry
 
 ```{r}
-
 sum_industry <- lease %>%
   filter(market == c("Manhattan", "Los Angeles", "Houston") & is.na(internal_industry) == 0) %>%
   group_by(market, internal_industry) %>%
   summarize(count = n()) %>%
   mutate(prp = count/(sum(count))) %>%
   ungroup()
+```
+```{r}
+# An index of CPI per quarter
+cpi_q <- cpi %>%
+  mutate(year = substr(date, 1, 4)) %>%
+  mutate(month = substr(date, 6, 7)) %>%
+  filter(month %in% c("03", "06", "09", "12")) %>%
+  mutate(quarter = case_when(
+                          month == "03" ~ ".Q1", 
+                          month == "06" ~ ".Q2", 
+                          month == "09" ~ ".Q3", 
+                          month == "12" ~ ".Q4")) %>%
+  mutate(year_quarter = paste(year, quarter, sep = "")) %>%
+  rename(cpi = value) %>%
+  select(year_quarter, cpi)
 
+# Appending additional (2024) data on CPI
+## Source: https://www.usinflationcalculator.com/inflation/consumer-price-index-and-annual-percent-changes-from-1913-to-2008/
+cpi_2024_q <- data.frame(
+  year_quarter = c("2023.Q3", "2023.Q4", "2024.Q1", "2024.Q2", "2024.Q3", "2024.Q4"),
+  cpi = c(296.808, 296.797, 301.836, 305.109, 307.789, 306.746)
+)
 
+cpi_q <- rbind(cpi_q, cpi_2024_q)
+
+# A function for matching a quarter to a value
+get_cpi_q <- function(time) {
+  # if(length(time) == 1) {
+    return(cpi_q %>% filter(year_quarter == time) %>% select(cpi))
+  # } 
+  # return(left_join(cpi_q, time, by = c("year_quarter" = "time") %>% select(cpi)))
+}
 ```
 
 
 Make Rent, Occupancy, and Availability  graphs for Manhattan, LA, Houston
 
 
-```{r}
+
+```{r side-by-side-patchwork, message=FALSE}
+############################# Rent #########################################
+
 # Combine rent data for all 3 cities
 combined_rent_data <- lease %>%
   filter(market %in% c("Manhattan", "Los Angeles", "Houston")) %>%
@@ -68,9 +97,10 @@ combined_rent_data <- lease %>%
   arrange(market, time)
 
 # Convert 'time' to ordered factor
-combined_rent_data$time <- factor(combined_rent_data$time, levels = unique(combined_rent_data$time), ordered = TRUE)
+combined_rent_data$time <- factor(combined_rent_data$time, 
+                                  levels = unique(combined_rent_data$time), 
+                                  ordered = TRUE)
 
-############################# Rent #########################################
 combined_rent_plot <- ggplot(combined_rent_data, aes(x = time, y = avg_rent, color = market, group = market)) +
   geom_line(size = 1.2) +
   geom_point() +
@@ -82,14 +112,58 @@ combined_rent_plot <- ggplot(combined_rent_data, aes(x = time, y = avg_rent, col
     title = "Overall Rent Trends (2018–2024)",
     subtitle = "Comparison across Manhattan, Los Angeles, and Houston",
     x = "Quarter",
-    y = "Average Rent (USD per sq ft/year)",
+    y = "Average Rent\n(USD per sq ft/year)",
     color = "Market"
   ) +
   theme_minimal(base_size = 12) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-print(combined_rent_plot)
+############################# Rent (inf. adj.) ######################################
+# Appending CPI values to combined_rent_data
+cpi_2018q1 <- as.numeric(get_cpi_q('2018.Q1'))
 
+combined_rent_data_adj <- lease %>%
+  filter(market %in% c("Manhattan", "Los Angeles", "Houston")) %>%
+  mutate(time = paste(year, ".", quarter, sep = "")) %>%
+  left_join(cpi_q, by = c("time" = "year_quarter")) %>%
+  mutate(overall_rent_adj = overall_rent * cpi_2018q1 / cpi) %>%
+  group_by(market, time) %>%
+  summarize(avg_rent_adj = mean(overall_rent_adj, na.rm = TRUE)) %>%
+  arrange(market, time)
+
+# combined_rent_data
+# combined_rent_data_adj
+# combined_rent_data_2
+
+# Visualization adj. for CPI (inflation)
+combined_rent_plot_adj <- ggplot(combined_rent_data_adj, aes(x = time,
+                                   y = avg_rent_adj,
+                                   color = market,
+                                   group = market)) +
+  geom_line(size = 1.2) +
+  geom_point() +
+  geom_vline(xintercept = which(levels(combined_rent_data_adj$time) == "2020.Q1"),
+             linetype = "dashed", color = "gray40", size = 1) +
+  annotate("text", 
+           x = which(levels(combined_rent_data_adj$time) == "2020.Q1"), 
+           y = Inf,
+           label = "COVID                               ", 
+           vjust = -0.5, angle = 90, size = 3, color = "gray40") +
+  labs(
+    title = "Overall Rent Trends (2018–2024)",
+    subtitle = "Comparison across Manhattan, Los Angeles, and Houston",
+    x = "Quarter",
+    y = "Average Rent Adjusted for Inflation\n(USD per sq ft/year)",
+    color = "Market"
+  ) +
+  scale_y_continuous(breaks = seq(20, 100, 10)) + 
+  theme_minimal(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+combined_rent_plot + combined_rent_plot_adj
+```
+
+```{r}
 ############################## Availability ################################
 combined_avail_data <- lease %>%
   filter(market %in% c("Manhattan", "Los Angeles", "Houston")) %>%
@@ -118,9 +192,11 @@ combined_avail_plot <- ggplot(combined_avail_data, aes(x = time, y = availabilit
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 print(combined_avail_plot)
+```
 
+```{r}
 ############################## Occupancy ####################################
-combined_occupancy_data <- market_occupancy %>%
+combined_occupancy_data <- maj_market_occu %>%
   filter(market %in% c("Manhattan", "Los Angeles", "Houston")) %>%
   mutate(time = paste(year, ".", quarter, sep = "")) %>%
   arrange(market, year, quarter)
@@ -172,8 +248,11 @@ combined_sublet_plot <- ggplot(combined_sublet_data, aes(x = time, y = sublet_sp
   geom_point() +
   geom_vline(xintercept = which(levels(combined_sublet_data$time) == "2020.Q1"),
              linetype = "dashed", color = "gray40", size = 1) +
-  annotate("text", x = which(levels(combined_sublet_data$time) == "2020.Q1"), y = Inf,
-           label = "COVID                               ", vjust = -0.5, angle = 90, size = 3, color = "gray40") +
+  annotate("text", 
+           x = which(levels(combined_sublet_data$time) == "2020.Q1"), 
+           y = Inf, label = "COVID                               ", 
+               vjust = -0.5, angle = 90, size = 3, color = "gray40"
+          ) +
   labs(
     title = "Sublet Available Space Trends (2018–2024)",
     subtitle = "Total square footage across Manhattan, Los Angeles, and Houston",
@@ -196,19 +275,28 @@ Number of lease entries for each city
 
 ```{r}
 lease %>%
-group_by(market) %>%
-summarise(nmarket = n()) %>%
-arrange(desc(nmarket))
-
+  group_by(market) %>%
+  summarise(nmarket = n()) %>%
+  arrange(desc(nmarket))
 ```
 
 
 ```{r}
+# Lease 3C = Leases across 3 cities
+three_mc <- c("Los Angeles", "Manhattan", "Houston")
+lease_3c <- lease %>% 
+  filter(market == three_mc) %>%
+  filter(!is.na(space_type)) %>%
+  mutate(RentSublet = ifelse(space_type == "New", "New", "Rental / Rental Sublet Space"))
+
 ggplot(data = lease_3c,
        mapping = aes(
          x = market,
          y = available_space)) +
   geom_boxplot() + 
-  facet_grid(space_type ~ .)
+  facet_grid(RentSublet ~ .) + 
+  scale_color_discrete() +
+  labs(y = "Available Rental Space (sq. ft.)",
+       x = "City")
 ```
 
