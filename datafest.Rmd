@@ -15,6 +15,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(esquisse)
 library(tidyverse)
 library(patchwork)
+library(ggrepel)
+
 
 maj_market_occu <- read.csv("./Major Market Occupancy Data-revised.csv")
 price_avail <- read.csv("./Price and Availability Data.csv")
@@ -73,10 +75,7 @@ cpi_q <- rbind(cpi_q, cpi_2024_q)
 
 # A function for matching a quarter to a value
 get_cpi_q <- function(time) {
-  # if(length(time) == 1) {
     return(cpi_q %>% filter(year_quarter == time) %>% select(cpi))
-  # } 
-  # return(left_join(cpi_q, time, by = c("year_quarter" = "time") %>% select(cpi)))
 }
 ```
 
@@ -85,7 +84,7 @@ Make Rent, Occupancy, and Availability  graphs for Manhattan, LA, Houston
 
 
 
-```{r side-by-side-patchwork, message=FALSE}
+```{r side-by-side-patchwork, message=FALSE, fig.width=15}
 ############################# Rent #########################################
 
 # Combine rent data for all 3 cities
@@ -106,8 +105,18 @@ combined_rent_plot <- ggplot(combined_rent_data, aes(x = time, y = avg_rent, col
   geom_point() +
   geom_vline(xintercept = which(levels(combined_rent_data$time) == "2020.Q1"), 
              linetype = "dashed", color = "gray40", size = 1) +
-  annotate("text", x = which(levels(combined_rent_data$time) == "2020.Q1"), y = Inf, 
-           label = "COVID                               ", vjust = -0.5, angle = 90, size = 3, color = "gray40") +
+  annotate("text", 
+           x = which(levels(combined_rent_data$time) == "2020.Q1"), 
+           y = Inf, 
+           label = "COVID Begins                           ", 
+           vjust = -0.5, angle = 90, size = 3, color = "gray40") +
+  geom_vline(xintercept = which(levels(combined_rent_data$time) == "2023.Q2"), 
+             linetype = "dashed", color = "gray40", size = 1) +
+  annotate("text", 
+           x = which(levels(combined_rent_data$time) == "2023.Q2"), 
+           y = Inf, 
+           label = "COVID Ends                           ", 
+           vjust = -0.5, angle = 90, size = 3, color = "gray40") +
   labs(
     title = "Overall Rent Trends (2018–2024)",
     subtitle = "Comparison across Manhattan, Los Angeles, and Houston",
@@ -131,10 +140,6 @@ combined_rent_data_adj <- lease %>%
   summarize(avg_rent_adj = mean(overall_rent_adj, na.rm = TRUE)) %>%
   arrange(market, time)
 
-# combined_rent_data
-# combined_rent_data_adj
-# combined_rent_data_2
-
 # Visualization adj. for CPI (inflation)
 combined_rent_plot_adj <- ggplot(combined_rent_data_adj, aes(x = time,
                                    y = avg_rent_adj,
@@ -142,15 +147,22 @@ combined_rent_plot_adj <- ggplot(combined_rent_data_adj, aes(x = time,
                                    group = market)) +
   geom_line(size = 1.2) +
   geom_point() +
-  geom_vline(xintercept = which(levels(combined_rent_data_adj$time) == "2020.Q1"),
+  geom_vline(xintercept = which(levels(combined_rent_data$time) == "2020.Q1"), 
              linetype = "dashed", color = "gray40", size = 1) +
   annotate("text", 
-           x = which(levels(combined_rent_data_adj$time) == "2020.Q1"), 
-           y = Inf,
-           label = "COVID                               ", 
+           x = which(levels(combined_rent_data$time) == "2020.Q1"), 
+           y = Inf, 
+           label = "COVID Begins                           ", 
+           vjust = -0.5, angle = 90, size = 3, color = "gray40") +
+  geom_vline(xintercept = which(levels(combined_rent_data$time) == "2023.Q2"), 
+             linetype = "dashed", color = "gray40", size = 1) +
+  annotate("text", 
+           x = which(levels(combined_rent_data$time) == "2023.Q2"), 
+           y = Inf, 
+           label = "COVID Ends                           ", 
            vjust = -0.5, angle = 90, size = 3, color = "gray40") +
   labs(
-    title = "Overall Rent Trends (2018–2024)",
+    title = "Overall Rent Trends, Adjusted for Inflation (2018–2024)",
     subtitle = "Comparison across Manhattan, Los Angeles, and Houston",
     x = "Quarter",
     y = "Average Rent Adjusted for Inflation\n(USD per sq ft/year)",
@@ -177,10 +189,20 @@ combined_avail_data$time <- factor(combined_avail_data$time, levels = unique(com
 combined_avail_plot <- ggplot(combined_avail_data, aes(x = time, y = availability_proportion * 100, color = market, group = market)) +
   geom_line(size = 1.2) +
   geom_point() +
-  geom_vline(xintercept = which(levels(combined_avail_data$time) == "2020.Q1"),
+  geom_vline(xintercept = which(levels(combined_avail_data$time) == "2020.Q1"), 
              linetype = "dashed", color = "gray40", size = 1) +
-  annotate("text", x = which(levels(combined_avail_data$time) == "2020.Q1"), y = Inf,
-           label = "COVID                               ", vjust = -0.5, angle = 90, size = 3, color = "gray40") +
+  annotate("text", 
+           x = which(levels(combined_avail_data$time) == "2020.Q1"), 
+           y = Inf, 
+           label = "COVID Begins                           ", 
+           vjust = -0.5, angle = 90, size = 3, color = "gray40") +
+  geom_vline(xintercept = which(levels(combined_avail_data$time) == "2023.Q2"), 
+             linetype = "dashed", color = "gray40", size = 1) +
+  annotate("text", 
+           x = which(levels(combined_avail_data$time) == "2023.Q2"), 
+           y = Inf, 
+           label = "COVID Ends                           ", 
+           vjust = -0.5, angle = 90, size = 3, color = "gray40") +
   labs(
     title = "Availability Proportion Trends (2018–2024)",
     subtitle = "Comparison across Manhattan, Los Angeles, and Houston",
@@ -213,6 +235,20 @@ combined_occupancy_plot <- ggplot(combined_occupancy_data, aes(x = time, y = avg
     y = "Occupancy (%)",
     color = "Market"
   ) +
+  geom_vline(xintercept = which(levels(combined_occupancy_data$time) == "2020.Q1"), 
+             linetype = "dashed", color = "gray40", size = 1) +
+  annotate("text", 
+           x = which(levels(combined_occupancy_data$time) == "2020.Q1"), 
+           y = Inf, 
+           label = "COVID Begins                           ", 
+           vjust = -0.5, angle = 90, size = 3, color = "gray40") +
+  geom_vline(xintercept = which(levels(combined_occupancy_data$time) == "2023.Q2"), 
+             linetype = "dashed", color = "gray40", size = 1) +
+  annotate("text", 
+           x = which(levels(combined_occupancy_data$time) == "2023.Q2"), 
+           y = Inf, 
+           label = "COVID Ends                           ", 
+           vjust = -0.5, angle = 90, size = 3, color = "gray40") +
   theme_minimal(base_size = 12) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
@@ -234,30 +270,41 @@ Histogram for each city for sublet available space.
 # ===================== Sublet Available Space =================================
 combined_sublet_data <- lease %>%
   filter(market %in% c("Manhattan", "Los Angeles", "Houston")) %>%
+  filter(substr(year, 1, 4) %in% c("2019", "2020", "2021", "2022", "2023", "2024")) %>%
   mutate(time = paste(year, ".", quarter, sep = "")) %>%
   group_by(market, time) %>%
-  summarize(sublet_space = sum(as.numeric(sublet_available_space), na.rm = TRUE)) %>%
+  mutate(sub_avail_space_bil = as.numeric(sublet_available_space) / 1e9) %>%
+  summarize(sublet_space_bil = sum(sub_avail_space_bil, na.rm = TRUE)) %>%
   arrange(market, time)
 
 # Convert time to ordered factor
 combined_sublet_data$time <- factor(combined_sublet_data$time, levels = unique(combined_sublet_data$time), ordered = TRUE)
 
 # Plot
-combined_sublet_plot <- ggplot(combined_sublet_data, aes(x = time, y = sublet_space, color = market, group = market)) +
+combined_sublet_plot <- ggplot(combined_sublet_data, 
+                               aes(x = time, y = sublet_space_bil, 
+                                   color = market, group = market)) +
   geom_line(size = 1.2) +
   geom_point() +
-  geom_vline(xintercept = which(levels(combined_sublet_data$time) == "2020.Q1"),
+  geom_vline(xintercept = which(levels(combined_sublet_data$time) == "2020.Q1"), 
              linetype = "dashed", color = "gray40", size = 1) +
   annotate("text", 
            x = which(levels(combined_sublet_data$time) == "2020.Q1"), 
-           y = Inf, label = "COVID                               ", 
-               vjust = -0.5, angle = 90, size = 3, color = "gray40"
-          ) +
+           y = Inf, 
+           label = "COVID Begins                           ", 
+           vjust = -0.5, angle = 90, size = 3, color = "gray40") +
+  geom_vline(xintercept = which(levels(combined_sublet_data$time) == "2023.Q2"), 
+             linetype = "dashed", color = "gray40", size = 1) +
+  annotate("text", 
+           x = which(levels(combined_sublet_data$time) == "2023.Q2"), 
+           y = Inf, 
+           label = "COVID Ends                           ", 
+           vjust = -0.5, angle = 90, size = 3, color = "gray40") +
   labs(
-    title = "Sublet Available Space Trends (2018–2024)",
+    title = "Sublet Available Space Trends (2019–2024)",
     subtitle = "Total square footage across Manhattan, Los Angeles, and Houston",
     x = "Quarter",
-    y = "Sublet Available Space (sq ft)",
+    y = "Sublet Available Space\n(billions of sq ft)",
     color = "Market"
   ) +
   theme_minimal(base_size = 12) +
@@ -287,16 +334,31 @@ three_mc <- c("Los Angeles", "Manhattan", "Houston")
 lease_3c <- lease %>% 
   filter(market == three_mc) %>%
   filter(!is.na(space_type)) %>%
+  mutate(avail_space_mil = available_space / 1e6) %>%
   mutate(RentSublet = ifelse(space_type == "New", "New", "Rental / Rental Sublet Space"))
+
+quartiles <- lease_3c %>%
+  mutate(y_round = round(avail_space_mil, 1)) %>%
+  group_by(market, RentSublet) %>%
+  reframe(y = quantile(y_round, c(.25, .5, .75))) 
 
 ggplot(data = lease_3c,
        mapping = aes(
          x = market,
-         y = available_space)) +
+         y = avail_space_mil, 
+         fill = market))  +
   geom_boxplot() + 
   facet_grid(RentSublet ~ .) + 
-  scale_color_discrete() +
-  labs(y = "Available Rental Space (sq. ft.)",
-       x = "City")
+  geom_text_repel(
+    data = quartiles,
+    aes(x = market,
+        y = y,
+        label = y
+    ),
+    nudge_x = 0.4,
+    hjust = 0) + 
+  labs(y = "Available Rental Space\n(millions of sq. ft.)",
+       x = "City") + 
+  theme(legend.position = "none")
 ```
 
